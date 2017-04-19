@@ -1,8 +1,5 @@
 // Read this section of the workshop!!!
 
-
-
-
 var initialData = {"users": {
   // This user has id "1".
   "1": {
