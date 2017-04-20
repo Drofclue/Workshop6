@@ -1,4 +1,4 @@
-import {readDocument, writeDocument, addDocument, deleteDocument, getCollection} from './database.js';
+import {readDocument, writeDocument} from './database.js';
 
 /**
  * Emulates how a REST call is *asynchronous* -- it calls your function back
@@ -118,21 +118,19 @@ export function postStatusUpdate(user, location, contents, cb) {
 }
 
 
-
 /**
  * Adds a new comment to the database on the given feed item.
  */
 export function postComment(feedItemId, author, contents, cb) {
-  var feedItem = readDocument('feedItems', feedItemId);
-  feedItem.comments.push({
-    "author": author,
-    "contents": contents,
-    "postDate": new Date().getTime(),
-    "likeCounter": []
+  sendXHR('POST', '/feeditem/' + feedItemId + '/commentthread/', {
+    'author': author,
+    'contents': contents,
+    'postDate': new Date().getTime()
+  }, (xhr) => {
+    // Return the new status update.
+    cb(JSON.parse(xhr.responseText));
   });
-  writeDocument('feedItems', feedItem);
-  // Return a resolved version of the feed item.
-  emulateServerReturn(getFeedItemSync(feedItemId), cb);
+
 }
 
 /**
@@ -161,16 +159,12 @@ export function unlikeFeedItem(feedItemId, userId, cb) {
 
 
 
+
 /**
  * Adds a 'like' to a comment.
  */
 export function likeComment(feedItemId, commentIdx, userId, cb) {
-  var feedItem = readDocument('feedItems', feedItemId);
-  var comment = feedItem.comments[commentIdx];
-  comment.likeCounter.push(userId);
-  writeDocument('feedItems', feedItem);
-  comment.author = readDocument('users', comment.author);
-  emulateServerReturn(comment, cb);
+sendXHR('PUT', '/feeditem/' + feedItemId + '/commentthread' + commentIdx + '/likelist' + userId, undefined, (xhr) =>{cb(JSON.parse(xhr.responseText));});
 }
 
 /**

@@ -303,6 +303,86 @@ app.post('/search', function(req, res) {
 
 
 
+var CommentSchema = require('./schemas/comments.json')
+
+function postComment(feedItemId, body){
+  var feedItem = ReadDocument('feedItems', feedItemId);
+  var commentToPost = { "author": body.author, "contents": body.contents, "postDate": body.postDate, "likeCounter": []};
+  feedItem.comments.push(commentToPost);
+  writeDocument('feedItems', feedItem);
+  return feedItem;
+}
+
+// PostComment
+ //POST /userid/feed/:feeditemid/commentthread/comments
+ // { author: user, contents: contents, postDate: timestamp}
+app.post('/feeditem/:feeditemid/commentthread/', validate({body: CommentSchema}), function(req,res){
+// If this function runs, "req.body" passed JSON validation!
+var body = req.body;
+var fromUser = getUserIdFromToken(req.get('Authorization'));
+var feedItemId = parseInt(req.params.feedItemId, 10);
+
+
+if (fromUser === body.author){
+  var commentToPost = postComment(feedItemId, body);
+  // send the server code 201 which indicates successfull creation
+  res.status(201);
+  res.set('Location','/feeditem/'+ feedItemId + '/commentthread');
+  res.send(commentToPost)
+}
+else {
+  res.status(401).end();
+  }
+});
+
+//Like a comment
+// LikeAComment /feed/:feeditemid/commentthread/commententry/commentID/:userID
+app.put('/feed/:feeditemid/commentthread/:commentIdx/likelist/:userId', function(req, res){
+  var fromUser = getUserIdFromToken(req.get('Authorization'));
+  var feedItemId = parseInt(req.params.feedItemId, 10);
+  var commentIdx = parseInt(req.params.commentIdx, 10);
+  var userId = parseInt(req.params.userId, 10);
+
+  if (fromUser === userId){
+    var feedItem = ReadDocument('feedItems', feedItemId);
+    var comment = feedItem.comments[commentIdx];
+    comment.likeCounter.push(userId)
+    writeDocument('feedItems',feedItem);
+    comment.author = ReadDocument('users', comment.author);
+    res.status(202);
+    res.send(comment);
+
+  }
+  else{res.status(401).end();
+  }
+});
+
+// Un-like a comment
+// DELETE /feed/:feedItemId/commentThread/:commentIdx/likelist/:userID
+
+app.delete('/feed/:feedItemId/commentthread/:commentIdx/likelist/:userId', function(req,res){
+  var fromUser = getUserIdFromToken(req.get('Authorization'));
+  var feedItemId = parseInt(req.params.feeditemid, 10);
+  var commentIdx = parseInt(req.params.commentIdx, 10);
+  var userId = parseInt(req.params.userId, 10);
+  if(fromUser === userId) {
+    var feedItem = ReadDocument('feeditems',feedItemId);
+    var comment = feedItem.commetns[commentIdx];
+    var userIndex = comment.likeCounter.indexOf(userId);
+    if(commentIdx === -1) {
+      comment.likeCounter.splice(userIndex, 1);
+      writeDocument('feedItems', feedItem);
+    }
+    comment.author = ReadDocument('users', comment.author);
+    res.send(comment)
+  }
+else{
+  res.status(401).end();
+  }
+})
+
+
+
 
 
 /**

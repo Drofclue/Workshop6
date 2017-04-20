@@ -3,16 +3,17 @@
     "definitions": {},
     "id": "http://example.com/example.json",
     "properties": {
+        "author": {
+            "type": "integer"
+        },
         "contents": {
-            "id": "/properties/contents",
             "type": "string"
         },
-        "location": {
-            "id": "/properties/location",
-            "type": "string"
+        "likeCounter": {
+            "items": {},
+            "type": "array"
         },
-        "userId": {
-            "id": "/properties/userId",
+        "postDate": {
             "type": "integer"
         }
     },
